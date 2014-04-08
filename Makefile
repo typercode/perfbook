@@ -185,7 +185,7 @@ EPSSOURCES = \
 	locking/NonLocalLockHierarchy.eps \
 	locking/rnplock.eps
 
-all: perfbook.pdf
+all: perfbook.pdf perfbook_html
 
 perfbook.pdf: $(LATEXSOURCES) $(EPSSOURCES) extraction embedfonts
 	sh utilities/runlatex.sh perfbook bib
@@ -198,26 +198,15 @@ perfbook-hb.pdf: $(LATEXSOURCES) $(EPSSOURCES) extraction embedfonts
 	sed -e 's/,twocolumn/&,letterpaperhb/' -e 's/setboolean{hardcover}{false}/setboolean{hardcover}{true}/' < perfbook.tex > perfbook-hb.tex
 	sh utilities/runlatex.sh perfbook-hb bib
 
+perfbook_html: extraction
+	mkdir -p perfbook_html
+	cp -f perfbook_html.css perfbook_html/perfbook.css
+	htlatex perfbook.tex "perfbook_html,-css,fn-in,charset=utf8" "-utf8 -cvalidate" "-dperfbook_html/" "-interaction=batchmode"
+
 perfbook_flat.tex: $(LATEXSOURCES) $(EPSSOURCES) embedfonts
 	echo > qqz.tex
 	texexpand perfbook.tex > perfbook_flat.tex
 	sh utilities/extractqqz.sh < perfbook_flat.tex > qqz.tex
-
-qqz_html.tex: perfbook_flat.tex
-	sh utilities/prep4html.sh < qqz.tex > qqz_html.tex
-
-origpub_html.tex: perfbook_flat.tex
-	sh utilities/prep4html.sh < origpub.tex > origpub_html.tex
-
-contrib_html.tex: perfbook_flat.tex
-	sh utilities/prep4html.sh < contrib.tex > contrib_html.tex
-
-perfbook_html.tex: perfbook_flat.tex qqz_html.tex origpub_html.tex contrib_html.tex perfbook.pdf
-	sh utilities/prep4html.sh < perfbook_flat.tex > perfbook_html.tex
-	cp perfbook.bbl perfbook_html.bbl
-
-perfbook_html: perfbook_html.tex
-	latex2html -show_section_numbers -local_icons perfbook_html
 
 extraction: perfbook_flat.tex
 	cat perfbook_flat.tex qqz.tex | sh utilities/extractcontrib.sh > contrib.tex
@@ -252,10 +241,10 @@ count/sig-theft.eps: count/sig-theft.dot
 	dot -Tps -o count/sig-theft.eps count/sig-theft.dot
 
 clean:
-	find . -name '*.aux' -o -name '*.blg' \
+	find . '(' -name '*.aux' -o -name '*.blg' \
 		-o -name '*.dvi' -o -name '*.log' \
-		-o -name '*.qqz' -o -name '*.toc' | xargs rm
-	rm -f perfbook_flat.tex perfbook_html.tex perfbook.out perfbook-1c.out
+		-o -name '*.qqz' -o -name '*.toc' ')' -delete
+	rm -f perfbook_flat.tex perfbook_html.tex perfbook.out perfbook-1c.out perfbook.4ct perfbook.4tc perfbook.css perfbook.idv perfbook.lg perfbook.tmp perfbook.xref
 	rm -rf perfbook_html
 	rm -f SMPdesign/DiningPhilosopher5.eps \
 	      SMPdesign/DiningPhilosopher5TB.eps \
